@@ -1,0 +1,5 @@
+{
+  "inputText": "hello world",
+  "dimensions": 512,
+  "normalize": true
+}
