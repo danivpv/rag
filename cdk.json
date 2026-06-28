@@ -1,17 +1,27 @@
 {
-  "app": "python app.py",
+  "app": "uv run python app.py",
   "watch": {
     "include": [
-      "**"
+      "app.py",
+      "constants.py",
+      "rag/**/*.py",
+      "rag/**/runtime/**"
     ],
     "exclude": [
-      "README.md",
-      "cdk*.json",
-      "requirements*.txt",
-      "source.bat",
-      "**/__init__.py",
       "**/__pycache__",
-      "tests"
+      "**/*.pyc",
+      "cdk.out/**",
+      "docs/**",
+      "scripts/**",
+      "sample_docs/**",
+      "client/**",
+      ".venv/**",
+      "uv.lock",
+      "*.md",
+      "*.toml",
+      "*.json",
+      ".git/**",
+      "*.code-workspace"
     ]
   },
   "context": {
