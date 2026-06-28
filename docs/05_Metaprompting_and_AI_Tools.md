@@ -29,7 +29,7 @@ Use this as the foundational system prompt for **all** follow-up threads and cod
 > - `KBAgentStackStorage` (termination_protection=True) — owns S3 bucket
 > - `KBAgentStack` — owns Docker Lambda + API Gateway REST API
 >
-> Folder structure: `rag/api/infrastructure.py`, `rag/storage/infrastructure.py`, `rag/rag/infrastructure.py`, `rag/component.py`, `app.py`, `constants.py`
+> Folder structure: `src/rag/api/infrastructure.py`, `src/rag/storage/infrastructure.py`, `src/rag/rag/infrastructure.py`, `src/rag/component.py`, `app.py`, `constants.py`
 > All CDK infrastructure files are **complete and correct** — do NOT modify CDK files unless explicitly asked.
 >
 > **My current state of knowledge:**
@@ -72,9 +72,9 @@ Read these files BEFORE writing any code:
 ### **Goal**: Write the CDK Constructs for S3 storage, API Gateway auth layer, and the top-level app + stack assembly. All files are currently empty stubs.
 
 ### **Deliverables**:
-- [storage/infrastructure.py](file:///c:/Users/daniv/Programacion/oversight/rag/storage/infrastructure.py) — `StorageConstruct(Construct)` with S3 bucket, `RemovalPolicy.DESTROY`, `auto_delete_objects=True`, `CfnOutput` for bucket name
-- [api/infrastructure.py](file:///c:/Users/daniv/Programacion/oversight/rag/api/infrastructure.py) — `ApiConstruct(Construct)` with API Gateway REST API, `/health` GET (no auth), `/query` POST (API key required), usage plan with throttling (10 rps/20 burst), `CfnOutput` for API URL and Key ID
-- [rag/component.py](file:///c:/Users/daniv/Programacion/oversight/rag/component.py) — `RagComponent(Construct)` that wires together `StorageConstruct`, `ComputeConstruct` (from Thread 2), and `ApiConstruct`. Exposes `bucket`, `fn`, `api` as properties.
+- [src/rag/storage/infrastructure.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/storage/infrastructure.py) — `StorageConstruct(Construct)` with S3 bucket, `RemovalPolicy.DESTROY`, `auto_delete_objects=True`, `CfnOutput` for bucket name
+- [src/rag/api/infrastructure.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/api/infrastructure.py) — `ApiConstruct(Construct)` with API Gateway REST API, `/health` GET (no auth), `/query` POST (API key required), usage plan with throttling (10 rps/20 burst), `CfnOutput` for API URL and Key ID
+- [src/rag/component.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/component.py) — `RagComponent(Construct)` that wires together `StorageConstruct`, `ComputeConstruct` (from Thread 2), and `ApiConstruct`. Exposes `bucket`, `fn`, `api` as properties.
 - [app.py](file:///c:/Users/daniv/Programacion/oversight/app.py) — Root CDK App: one `KBAgentStack(Stack)` that instantiates `RagComponent`. Sets `env=cdk.Environment(region="us-east-1")`.
 - `c:\Users\daniv\Programacion\oversight\constants.py` — Shared constants (region, stack name, memory size, timeout)
 ```
@@ -232,23 +232,84 @@ handler = Mangum(app, lifespan="off")
 - `BEDROCK_EMBED_MODEL_ID` — `amazon.titan-embed-text-v2:0`
 - `BEDROCK_GENERATE_MODEL_ID` — `us.anthropic.claude-haiku-4-5-20251001-v1:0`
 
-### **Goal**: Build the full RAG pipeline inside the Docker Lambda. Port from Google Gemini to Amazon Bedrock. All service files under `rag/rag/runtime/` are empty stubs.
+### **Goal**: Build the full RAG pipeline inside the Docker Lambda. Port from Google Gemini to Amazon Bedrock. All service files under `src/rag/rag/runtime/` are empty stubs.
 
 ### **Deliverables**:
-- [Dockerfile](file:///c:/Users/daniv/Programacion/oversight/rag/rag/runtime/Dockerfile) — `public.ecr.aws/lambda/python:3.12-x86_64` base image
-- [requirements.txt](file:///c:/Users/daniv/Programacion/oversight/rag/rag/runtime/requirements.txt) — `boto3, mangum, fastapi, faiss-cpu, numpy, pypdf, python-docx, pydantic` (no LangChain, no google libs)
-- [main.py](file:///c:/Users/daniv/Programacion/oversight/rag/rag/runtime/main.py) — FastAPI app + Mangum handler
-- [api/routes.py](file:///c:/Users/daniv/Programacion/oversight/rag/rag/runtime/api/routes.py) — `/health` GET and `/query` POST endpoints
-- [api/models.py](file:///c:/Users/daniv/Programacion/oversight/rag/rag/runtime/api/models.py) — Pydantic `QueryRequest` and `QueryResponse` matching the contract above
-- [services/embedder.py](file:///c:/Users/daniv/Programacion/oversight/rag/rag/runtime/services/embedder.py) — boto3 Bedrock Titan Embed v2 + ETag-cached FAISS load from S3
-- [services/retriever.py](file:///c:/Users/daniv/Programacion/oversight/rag/rag/runtime/services/retriever.py) — port of prototype hybrid FAISS+keyword retrieval, using raw faiss-cpu
-- [services/generator.py](file:///c:/Users/daniv/Programacion/oversight/rag/rag/runtime/services/generator.py) — boto3 Claude Haiku, XML-tagged prompt, port of confidence scoring
-- [services/logger.py](file:///c:/Users/daniv/Programacion/oversight/rag/rag/runtime/services/logger.py) — structured JSON stdout logger (no basicConfig)
+- [src/rag/rag/runtime/Dockerfile](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/Dockerfile) — `public.ecr.aws/lambda/python:3.12-x86_64` base image
+- [src/rag/rag/runtime/requirements.txt](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/requirements.txt) — `boto3, mangum, fastapi, faiss-cpu, numpy, pypdf, python-docx, pydantic` (no LangChain, no google libs)
+- [src/rag/rag/runtime/main.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/main.py) — FastAPI app + Mangum handler
+- [src/rag/rag/runtime/api/routes.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/api/routes.py) — `/health` GET and `/query` POST endpoints
+- [src/rag/rag/runtime/api/models.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/api/models.py) — Pydantic `QueryRequest` and `QueryResponse` matching the contract above
+- [src/rag/rag/runtime/services/embedder.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/services/embedder.py) — boto3 Bedrock Titan Embed v2 + ETag-cached FAISS load from S3
+- [src/rag/rag/runtime/services/retriever.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/services/retriever.py) — port of prototype hybrid FAISS+keyword retrieval, using raw faiss-cpu
+- [src/rag/rag/runtime/services/generator.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/services/generator.py) — boto3 Claude Haiku, XML-tagged prompt, port of confidence scoring
+- [src/rag/rag/runtime/services/logger.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/services/logger.py) — structured JSON stdout logger (no basicConfig)
+- [src/rag/rag/runtime/config.py](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/config.py) — pydantic-settings singleton
 ```
 
 ---
 
-### Thread 3: Streamlit Client
+### Thread 2.5: Build Setup & Dependency Management
+
+```
+### System prompt: [GLOBAL SYSTEM PROMPT ABOVE]
+
+### Role: Python tooling and build specialist
+
+Read these files BEFORE writing any code:
+- Existing pyproject.toml: [pyproject.toml](file:///c:/Users/daniv/Programacion/oversight/pyproject.toml)
+- [03_Implementation_Guide.md](file:///c:/Users/daniv/Programacion/oversight/docs/03_Implementation_Guide.md) (Section 4: Docker Lambda requirements)
+
+### Key constraints:
+- Use `uv` strictly for all package management. No pip commands in scripts.
+- The Lambda container will use a native multi-stage build directly from `uv.lock`, abandoning `requirements.txt`.
+- Add convenient run scripts to the `Makefile` (e.g., `lambda-requirements`, `docker-build`, `lint`, `test`, `seed`).
+
+### **Goal**: Configure a robust `uv` build backend, set up dependency groups, and create a multi-stage Dockerfile relying on BuildKit cache overlays and `uv.lock`.
+
+### **Deliverables**:
+- Updated `pyproject.toml` and `Makefile`
+- `dockerfile_cheatsheet.md` capturing Docker architecture learnings.
+- [src/rag/rag/runtime/Dockerfile](file:///c:/Users/daniv/Programacion/oversight/src/rag/rag/runtime/Dockerfile) using ephemeral multi-stage architecture, native `--mount=type=cache`, non-destructive bind mounts (`--mount=type=bind`), and decoupled project extraction (`uv sync --no-install-project`).
+```
+
+---
+
+### Thread 3: Deployment, Seeding & Smoke Tests
+
+```
+### System prompt: [GLOBAL SYSTEM PROMPT ABOVE]
+
+### Role: DevOps engineer writing deployment scripts
+Read before building:
+- Chunking and embedding strategy: [01_Prototype_Analysis.md](file:///c:/Users/daniv/Programacion/oversight/docs/01_Prototype_Analysis.md) (§2.1, §2.3)
+- AWS SSO Context: [aws_sso_cheatsheet.md](file:///c:/Users/daniv/Programacion/danivpv/applications/aws_sso_cheatsheet.md)
+- Prototype document loader: [document_loader.py](file:///c:/Users/daniv/Programacion/Knowledge-Base-Agent-using-RAG/loaders/document_loader.py)
+
+### Key constraints for Deployment:
+- I lack permissions to deploy on the candidate account. Instead, we will deploy to my personal AWS Organization.
+- You must guide me step-by-step through creating a new Member Account explicitly named `oversight-test` via `aws organizations create-account` and granting my SSO user `AdministratorAccess`.
+- Provide the CLI commands to log in via SSO (`aws sso login`) and bootstrap the CDK in this new account.
+
+### Key constraints for Seeding & Tests:
+- seed.py must use boto3 directly (not CDK) — it runs AFTER cdk deploy
+- Reads bucket name from .env (S3_BUCKET_NAME) or falls back to CloudFormation describe-stacks
+- Embedding: Bedrock Titan v2, dimensions=512, normalize=True — must match Lambda embedder exactly
+- FAISS: use raw `faiss.IndexFlatIP` + `faiss.write_index()`
+- test_api.py: writes all request payloads to scripts/payloads/ directory FIRST
+- test_api.py: reads API_BASE_URL and API_TOKEN from .env
+
+### **Goal**: Local scripts to populate S3/FAISS, step-by-step AWS SSO member account deployment, and validate the deployed API end-to-end.
+
+### **Deliverables**:
+- Step-by-step deployment guide for SSO Member account creation and CDK bootstrap
+- [scripts/seed.py](file:///c:/Users/daniv/Programacion/oversight/scripts/seed.py) — Loads docs, embeds via Bedrock, saves FAISS index to S3
+- [scripts/test_api.py](file:///c:/Users/daniv/Programacion/oversight/scripts/test_api.py) — End-to-end smoke tests against live API
+```
+
+---
+
+### Thread 4: Streamlit Client
 
 ```
 ### System prompt: [GLOBAL SYSTEM PROMPT ABOVE]
@@ -269,38 +330,6 @@ Read the API contract (§7) before building: [03_Implementation_Guide.md](file:/
 ### **Deliverables**:
 - [client/app.py](file:///c:/Users/daniv/Programacion/oversight/client/app.py) — Streamlit UI showing question, answer, confidence, sources, metadata
 - `.env.example` — Template with `API_BASE_URL` and `API_TOKEN` placeholders
-```
-
----
-
-### Thread 4: Seeding Script & Smoke Tests
-
-```
-### System prompt: [GLOBAL SYSTEM PROMPT ABOVE]
-
-### Role: DevOps engineer writing deployment scripts
-Read before building:
-- Chunking and embedding strategy: [01_Prototype_Analysis.md](file:///c:/Users/daniv/Programacion/oversight/docs/01_Prototype_Analysis.md) (§2.1, §2.3)
-- Seeding script pattern and S3 key structure: [03_Implementation_Guide.md](file:///c:/Users/daniv/Programacion/oversight/docs/03_Implementation_Guide.md)
-- Prototype document loader (reuse loading logic): [document_loader.py](file:///c:/Users/daniv/Programacion/Knowledge-Base-Agent-using-RAG/loaders/document_loader.py)
-- Prototype text splitter: [text_splitter.py](file:///c:/Users/daniv/Programacion/Knowledge-Base-Agent-using-RAG/utils/text_splitter.py)
-
-### Key constraints:
-- seed.py must use boto3 directly (not CDK) — it runs AFTER cdk deploy
-- Reads bucket name from .env (S3_BUCKET_NAME) or falls back to CloudFormation describe-stacks
-- chunk_size=1000, chunk_overlap=200, separators=["\n\n", "\n", ". ", " ", ""] — must match prototype exactly
-- Embedding: Bedrock Titan v2, dimensions=512, normalize=True — must match Lambda embedder exactly
-- FAISS: use raw `faiss.IndexFlatIP` + `faiss.write_index()` (NOT LangChain save_local) — must be readable by Lambda
-- Chunk metadata saved to index.pkl as list of dicts: `{text, source, chunk_index, file_path}`
-- Saves `index/index.faiss` + `index/index.pkl` to S3 bucket
-- test_api.py: writes all request payloads to scripts/payloads/ directory FIRST (no inline JSON in bash args)
-- test_api.py: reads API_BASE_URL and API_TOKEN from .env
-
-### **Goal**: Local scripts to populate S3/FAISS and validate the deployed API end-to-end.
-
-### **Deliverables**:
-- [scripts/seed.py](file:///c:/Users/daniv/Programacion/oversight/scripts/seed.py) — Loads sample_docs/, chunks, embeds via Bedrock, saves FAISS index + PKL to S3
-- [scripts/test_api.py](file:///c:/Users/daniv/Programacion/oversight/scripts/test_api.py) — Smoke tests: health check, auth rejection (no key), valid query, structured response validation
 ```
 
 ---

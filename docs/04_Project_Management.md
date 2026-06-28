@@ -75,12 +75,12 @@ pie title "Rubric Weight Estimation (What They Care About)"
 | **Must Have** | CDK synth + deploy (2 stacks) | ✅ |
 | **Must Have** | API Gateway + API Key auth | ✅ |
 | **Must Have** | CloudWatch access logs (APIGW) + execution logs (Lambda) | ✅ |
-| **Must Have** | Lambda /health + /query endpoints | ⬜ |
+| **Must Have** | Lambda /health + /query endpoints | ✅ |
 | **Must Have** | Pre-seeded FAISS from sample docs | ⬜ |
 | **Must Have** | Streamlit client calling AWS API | ⬜ |
-| **Must Have** | Structured JSON response (answer, sources, confidence, metadata) | ⬜ |
+| **Must Have** | Structured JSON response (answer, sources, confidence, metadata) | ✅ |
 | **Must Have** | README with architecture diagram, tradeoffs, demo evidence | ⬜ |
-| **Should Have** | Structured CloudWatch logging with request IDs | ⬜ |
+| **Should Have** | Structured CloudWatch logging with request IDs | ✅ |
 | **Should Have** | Error handling (401, 400, 500 with structured errors) | ⬜ |
 | **Should Have** | `cdk destroy` cleanup instructions | ⬜ |
 | **Should Have** | test_api.py validation script | ⬜ |
@@ -113,9 +113,9 @@ The implementation follows a sequential subsystem approach within a single conve
 | Phase | Focus | Input | Output |
 |-------|-------|-------|--------|
 | **Phase 0** | CDK scaffolding + architecture | Design docs | Working `cdk synth` (✅ done) |
-| **Phase 1** | Lambda RAG engine | Runtime stubs + prototype code | Working handler (FAISS, Bedrock) |
-| **Phase 2** | Seeding script | Sample docs + S3 bucket | FAISS index in S3 |
-| **Phase 3** | Deploy + smoke test | AWS credentials | Live API endpoints |
+| **Phase 1** | Lambda RAG engine | Runtime stubs + prototype code | Working handler (FAISS, Bedrock) (✅ done) |
+| **Phase 2.5**| Build Tooling | `uv.lock` + Makefile | Multi-stage caching setup (✅ done) |
+| **Phase 3** | Deployment, Seeding & Tests | AWS SSO credentials | Live API + S3 Index |
 | **Phase 4** | Streamlit client | API URL + key | Working local UI |
 | **Phase 5** | README + evaluation | All of the above | Submission-ready repo |
 

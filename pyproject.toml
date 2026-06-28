@@ -1,27 +1,32 @@
 [project]
-name = "oversight"
+name = "rag"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "danivpv", email = "danivpv@gmail.com" }]
 requires-python = ">=3.12"
-dependencies = [
-    "aws-cdk-lib>=2.260.0,<3.0.0",
-    "constructs>=10.5.0,<11.0.0",
-    "boto3>=1.43.36",
-    "faiss-cpu>=1.14.3",
-    "fastapi>=0.138.1",
-    "langchain>=1.3.11",
-    "langchain-community>=0.4.2",
-    "mangum>=0.21.0",
-    "pydantic-settings>=2.14.2",
-    "pypdf>=6.14.2",
-    "python-docx>=1.2.0",
-    "python-dotenv>=1.2.2",
-]
-
-[project.scripts]
-rag = "rag.rag:main"
+dependencies = ["aws-cdk-lib>=2.260.0,<3.0.0", "constructs>=10.5.0,<11.0.0"]
 
 [dependency-groups]
-dev = ["pytest>=9.1.1", "pytest-asyncio>=1.4.0", "ruff>=0.15.20"]
+lambda-requirements = [
+    "pydantic-settings>=2.14.2",
+    "boto3>=1.43.36",
+    "mangum>=0.21.0",
+    "faiss-cpu>=1.14.3",
+    "fastapi>=0.138.1",
+    "pydantic>=2.13.4",
+]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.15.20",
+    "python-dotenv>=1.2.2",
+    "ty>=0.0.55",
+]
+
+[tool.uv]
+default-groups = ["dev", "lambda-requirements"]
+
+[build-system]
+requires = ["uv_build>=0.11.25,<0.12"]
+build-backend = "uv_build"

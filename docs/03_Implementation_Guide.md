@@ -5,7 +5,7 @@
 
 ## 1. Actual Project Structure (As Implemented)
 
-```
+```text
 oversight/                             # uv monorepo root
 ├── app.py                             # CDK App entrypoint — two stacks
 ├── constants.py                       # Shared synthesis-time constants
@@ -13,40 +13,34 @@ oversight/                             # uv monorepo root
 ├── uv.lock                            # Committed — reproducible installs
 ├── cdk.json                           # CDK CLI config → "app": "uv run python app.py"
 │
-├── rag/                               # Business domain: RAG Knowledge Base
-│   ├── component.py                   # RagComponent(Construct) — wires Compute + API
-│   ├── api/
-│   │   └── infrastructure.py          # ApiConstruct — API Gateway REST API + auth
-│   ├── storage/
-│   │   └── infrastructure.py          # StorageConstruct — S3 bucket
-│   └── rag/
-│       ├── infrastructure.py          # ComputeConstruct — Docker Lambda
-│       └── runtime/                   # Lambda code (Docker build context)
-│           ├── main.py                # FastAPI app + Mangum handler
-│           ├── Dockerfile             # Lambda image (x86_64, Amazon Linux 2023)
-│           ├── requirements.txt       # Lambda-specific deps
-│           ├── api/
-│           │   ├── routes.py          # /health + /query endpoints
-│           │   └── models.py          # Pydantic request/response models
-│           └── services/              # RAG business logic (no infra coupling)
-│               ├── embedder.py        # Bedrock Titan Embed v2 + FAISS S3 ETag-cache
-│               ├── retriever.py       # Hybrid FAISS + keyword retrieval
-│               ├── generator.py       # Bedrock Claude Haiku invocation
-│               ├── confidence.py      # Heuristic confidence scoring
-│               ├── chunker.py         # RecursiveCharacterTextSplitter wrapper
-│               └── logger.py          # Structured JSON CloudWatch logging
-│
-├── client/
-│   └── app.py                         # Thin Streamlit client (~100 lines, API calls only)
+├── src/
+│   └── rag/                           # Business domain: RAG Knowledge Base
+│       ├── component.py               # RagComponent(Construct) — wires Compute + API
+│       ├── api/
+│       │   └── infrastructure.py      # ApiConstruct — API Gateway REST API + auth
+│       ├── storage/
+│       │   └── infrastructure.py      # StorageConstruct — S3 bucket
+│       └── rag/
+│           ├── infrastructure.py      # ComputeConstruct — Docker Lambda
+│           └── runtime/               # Lambda code (Docker build context)
+│               ├── main.py            # FastAPI app + Mangum handler
+│               ├── Dockerfile         # Lambda image (x86_64, Amazon Linux 2023)
+│               ├── requirements.txt   # Lambda-specific deps
+│               ├── api/
+│               │   ├── routes.py      # /health + /query endpoints
+│               │   └── models.py      # Pydantic request/response models
+│               ├── services/          # RAG business logic (no infra coupling)
+│               │   ├── embedder.py    # Bedrock Titan Embed v2 + FAISS S3 ETag-cache
+│               │   ├── retriever.py   # Hybrid FAISS + keyword retrieval
+│               │   ├── generator.py   # Bedrock Claude Haiku invocation
+│               │   └── logger.py      # Structured JSON CloudWatch logging
+│               └── config.py          # pydantic-settings for env vars
 │
 ├── scripts/
 │   ├── seed.py                        # Build + upload FAISS index to S3
 │   └── test_api.py                    # API smoke tests (health, query, auth rejection)
 │
-└── sample_docs/                       # Knowledge base seed documents (3 PDFs)
-    ├── rag_optimization.pdf
-    ├── embedding_evals.pdf
-    └── mckinsey_ai_2025.pdf
+└── docs/                              # Project documentation and knowledge base
 ```
 
 ### Key Structural Decisions
@@ -55,7 +49,7 @@ oversight/                             # uv monorepo root
 The CDK cheatsheet recommended keeping the CDK entrypoint at the root alongside `constants.py` — simpler import paths and clearer that the whole repo is one CDK application. `cdk.json` `"app"` key points to it: `"uv run python app.py"`.
 
 **Why domain-per-folder with co-located `infrastructure.py`?**
-Each folder (`rag/api/`, `rag/storage/`, `rag/rag/`) contains both the CDK Construct (`infrastructure.py`) and the runtime code it manages. This follows the AWS-recommended project structure: infra is co-located with the code it deploys, not isolated in a separate `infra/` directory.
+Each folder (`src/rag/api/`, `src/rag/storage/`, `src/rag/rag/`) contains both the CDK Construct (`infrastructure.py`) and the runtime code it manages. This follows the AWS-recommended project structure: infra is co-located with the code it deploys, not isolated in a separate `infra/` directory.
 
 **Why `services/` not `rag/` inside the Lambda runtime?**
 `services/` is business logic (embedding, retrieval, generation) that happens to implement RAG. It's more generic and aligns with clean architecture terminology. Both names are fine; `services/` is the one used.
@@ -154,30 +148,42 @@ flowchart TB
 **Decision: `x86_64`** — safety > 20% cost saving for an 8-hour project. ARM is a documented future optimisation.
 
 ```dockerfile
-# rag/rag/runtime/Dockerfile
-FROM public.ecr.aws/lambda/python:3.12.2026.06.13.12-x86_64
+# src/rag/rag/runtime/Dockerfile
+# ==============================================================================
+# STAGE 1: THE BUILDER
+# ==============================================================================
+FROM public.ecr.aws/lambda/python:3.12-x86_64 AS builder
 
-COPY requirements.txt ${LAMBDA_TASK_ROOT}/
-RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_NO_PROGRESS=1
 
-COPY . ${LAMBDA_TASK_ROOT}/
+WORKDIR /build
+
+# Cache Layer 1: Third-Party Dependencies Only
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-editable
+
+# Cache Layer 2: Project Code & Installation
+COPY . /build
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-editable
+
+# ==============================================================================
+# STAGE 2: FINAL RUNTIME
+# ==============================================================================
+FROM public.ecr.aws/lambda/python:3.12-x86_64
+
+COPY --from=builder /build/.venv/lib/python3.12/site-packages ${LAMBDA_TASK_ROOT}/
+COPY src/rag/rag/runtime/ ${LAMBDA_TASK_ROOT}/
 
 CMD ["main.handler"]
 ```
 
-```txt
-# rag/rag/runtime/requirements.txt
-boto3>=1.34
-mangum>=0.17
-fastapi>=0.111
-faiss-cpu>=1.8
-numpy>=1.26
-langchain-text-splitters>=0.2
-pypdf>=4.0
-python-docx>=1.1
-pydantic>=2.0
-pydantic-settings>=2.0
-```
+**Native BuildKit Cache Overlays & Dependency Separation**
+Instead of a flat `requirements.txt` build, we utilize a two-stage process using `uv sync` natively with the `uv.lock`. The first `RUN` command uses non-destructive bind mounts (`--mount=type=bind`) to read the lockfile without permanently burning it into the layer. It also uses `--no-install-project` to separate the slow-moving 3rd-party dependencies from lightning-fast application code cycles, ensuring rapid iteration without cache invalidations.
 
 ---
 
@@ -186,12 +192,12 @@ pydantic-settings>=2.0
 **Mangum** is an ASGI adapter: it translates API Gateway Lambda proxy events into standard ASGI requests that FastAPI can process.
 
 ```python
-# rag/rag/runtime/main.py
+# src/rag/rag/runtime/main.py
 from fastapi import FastAPI
 from mangum import Mangum
 from api.routes import router
 
-app = FastAPI(title="KB Agent API", docs_url="/docs")
+app = FastAPI(title="KB Agent API", docs_url=None)
 app.include_router(router)
 
 handler = Mangum(app, lifespan="off")
@@ -214,7 +220,7 @@ The OpenAPI schema at `/docs` is a bonus — it's self-documenting and looks pro
 
 ## 6. Subsystem Breakdown
 
-### Subsystem 1: StorageConstruct (`rag/storage/infrastructure.py`)
+### Subsystem 1: StorageConstruct (`src/rag/storage/infrastructure.py`)
 
 **Goal**: S3 bucket exists, sample docs + FAISS index uploaded.
 
@@ -238,7 +244,7 @@ class StorageConstruct(Construct):
 
 ---
 
-### Subsystem 2: ComputeConstruct (`rag/rag/infrastructure.py`)
+### Subsystem 2: ComputeConstruct (`src/rag/rag/infrastructure.py`)
 
 **Goal**: Docker Lambda that loads FAISS from S3 (ETag-cached), embeds queries via Bedrock, retrieves chunks, generates answer via Claude Haiku.
 
@@ -247,7 +253,7 @@ Key IAM notes:
 - `add_to_role_policy` for Bedrock — no L2 grant helper exists in stable CDK; manual ARN construction is the correct, least-privilege approach
 - `Stack.of(self).account` — resolves to `{ Ref: AWS::AccountId }` in CloudFormation; scopes the inference profile ARN to this account without using wildcards
 
-**FAISS Load with ETag Write-Through Cache** — `rag/rag/runtime/services/embedder.py`:
+**FAISS Load with ETag Write-Through Cache** — `src/rag/rag/runtime/services/embedder.py`:
 
 ```python
 import os, json, pickle, boto3, faiss
@@ -275,9 +281,32 @@ def _load_or_refresh():
     _etag = latest_etag
 ```
 
+**Mathematical Equivalence of Similarity Scoring**
+
+The original LangChain prototype used `faiss.IndexFlatL2` (Euclidean distance) and converted the distance to a similarity score using `1.0 - (distance / 2.0)`. Our implementation uses `faiss.IndexFlatIP` (Inner Product) on `L2-normalized` vectors generated by Bedrock. These two approaches are mathematically identical.
+
+*Proof:*
+Let $u, v$ be L2-normalized embedding vectors ($\|u\|_2 = 1$, $\|v\|_2 = 1$).
+FAISS `IndexFlatL2` computes the squared Euclidean distance:
+$d^2(u,v) = \|u - v\|_2^2 = \langle u - v, u - v \rangle = \|u\|_2^2 + \|v\|_2^2 - 2\langle u, v \rangle = 2 - 2\langle u, v \rangle$
+
+The prototype's similarity formula was $1 - \frac{d^2(u,v)}{2}$. Substituting the distance:
+$\text{Similarity} = 1 - \frac{2 - 2\langle u, v \rangle}{2} = 1 - (1 - \langle u, v \rangle) = \langle u, v \rangle$
+
+FAISS `IndexFlatIP` computes the Inner Product directly ($\langle u, v \rangle$), which is identical to the prototype's mathematically transformed L2 distance score, completely avoiding the extra arithmetic overhead while remaining highly accurate for similarity comparisons.
+
+**Latency Impact & Rationale**
+
+Does this translate to a meaningful latency improvement? **At our prototype scale, no—it is essentially architectural syntax sugar.**
+FAISS is highly optimized C++ utilizing CPU SIMD instructions (like AVX2). For a small knowledge base (e.g., < 10,000 chunks), a vector search takes less than `0.001` seconds (1 millisecond) regardless of whether you use `IndexFlatIP` (dot product) or `IndexFlatL2` (Euclidean distance). The Python-level arithmetic we avoided (`1 - (distance / 2)`) also executes in fractions of a millisecond.
+
+The real rationale for this choice is **correctness and maintainability**:
+1. **Less Bug-Prone**: Manually converting distance to similarity is a common source of logic bugs (e.g., forgetting to normalize vectors, or dividing by the wrong constant). `IndexFlatIP` directly outputs the exact `[0, 1]` similarity score we need.
+2. **Standardization**: Dot product (Inner Product) on normalized vectors is the industry standard for cosine similarity. 
+
 ---
 
-### Subsystem 3: ApiConstruct (`rag/api/infrastructure.py`)
+### Subsystem 3: ApiConstruct (`src/rag/api/infrastructure.py`)
 
 **Goal**: API Gateway REST API with API Key auth, CloudWatch access logs, proxied to Lambda.
 
@@ -289,7 +318,7 @@ Key decisions:
 
 ---
 
-### Subsystem 4: RagComponent (`rag/component.py`)
+### Subsystem 4: RagComponent (`src/rag/component.py`)
 
 **Goal**: Wire the stateless constructs (Compute + API) in dependency order. Accept `bucket` as a parameter from the parent stack.
 

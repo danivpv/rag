@@ -44,7 +44,7 @@ from constants import (
 # DockerImageCode.from_image_asset() needs a directory containing a Dockerfile.
 # CDK runs `docker build` there at synthesis time, pushes the image to ECR,
 # and injects the ECR URI into the Lambda resource.
-_RUNTIME_DIR = os.path.join(os.path.dirname(__file__), "runtime")
+_ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 
 class ComputeConstruct(Construct):
@@ -64,7 +64,8 @@ class ComputeConstruct(Construct):
             self,
             "KBAgentFn",
             code=lambda_.DockerImageCode.from_image_asset(
-                _RUNTIME_DIR,
+                _ROOT_DIR,
+                file="src/rag/rag/runtime/Dockerfile",
                 platform=Platform.LINUX_AMD64,
             ),
             memory_size=LAMBDA_MEMORY_MB,
