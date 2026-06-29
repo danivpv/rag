@@ -16,6 +16,16 @@ lambda-requirements = [
     "fastapi>=0.138.1",
     "pydantic>=2.13.4",
 ]
+data-ingestion = [
+    "boto3>=1.43.36",
+    "docx2txt>=0.9",
+    "faiss-cpu>=1.14.3",
+    "langchain-community>=0.4.2",
+    "langchain-text-splitters>=1.1.2",
+    "numpy>=2.5.0",
+    "pypdf>=6.14.2",
+    "typer>=0.26.8",
+]
 dev = [
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
@@ -25,7 +35,12 @@ dev = [
 ]
 
 [tool.uv]
-default-groups = ["dev", "lambda-requirements"]
+default-groups = ["dev", "lambda-requirements", "data-ingestion"]
+
+[project.scripts]
+hello = "rag:hello"
+hello-app = "rag:app"
+seed = "rag.ingestion.seed:app"
 
 [build-system]
 requires = ["uv_build>=0.11.25,<0.12"]
