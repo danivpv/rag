@@ -37,7 +37,7 @@ router = APIRouter()
 )
 def health() -> dict:
     """Lightweight liveness probe. Does NOT warm the FAISS index."""
-    return {"status": "healthy"}
+    return {"status": "ok"}
 
 
 # ── Query ──────────────────────────────────────────────────────────────────────

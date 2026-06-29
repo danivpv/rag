@@ -20,6 +20,8 @@ oversight/                             # uv monorepo root
 │       │   └── infrastructure.py      # ApiConstruct — API Gateway REST API + auth
 │       ├── storage/
 │       │   └── infrastructure.py      # StorageConstruct — S3 bucket
+│       ├── ingestion/                 # Offline FAISS Index Generation
+│       │   └── seed.py                # Build local FAISS index via Bedrock
 │       └── rag/
 │           ├── infrastructure.py      # ComputeConstruct — Docker Lambda
 │           └── runtime/               # Lambda code (Docker build context)
@@ -37,8 +39,9 @@ oversight/                             # uv monorepo root
 │               └── config.py          # pydantic-settings for env vars
 │
 ├── scripts/
-│   ├── seed.py                        # Build + upload FAISS index to S3
-│   └── test_api.py                    # API smoke tests (health, query, auth rejection)
+│   ├── input/                         # Source documents (PDF, DOCX, TXT)
+│   ├── output/                        # Test API JSON responses
+│   └── test_api.py                    # API smoke tests (health, query, auth)
 │
 └── docs/                              # Project documentation and knowledge base
 ```
@@ -350,6 +353,21 @@ app.synth()
 
 > [!IMPORTANT]
 > `app.synth()` is the trigger that serializes the construct tree into CloudFormation JSON in `cdk.out/`. `cdk deploy` automatically calls `python app.py` (via `cdk.json`) which runs `app.synth()` — you never need to run `cdk synth` manually before deploying. Running `cdk synth` explicitly is useful for inspecting the generated template or running it in CI without deploying.
+
+---
+
+### Subsystem 6: Ingestion System (`src/rag/ingestion/seed.py`)
+
+**Goal**: Convert raw documents (PDFs) into chunked, embedded FAISS vectors and metadata, ready to be bundled into the CDK deployment.
+
+Key workflow (`make seed`):
+1. **Load**: Read PDFs from `scripts/input/` using `langchain_community.document_loaders.PyPDFDirectoryLoader`.
+2. **Chunk**: Split text into manageable pieces using `RecursiveCharacterTextSplitter`. Based on the PDF analysis, `chunk_size=800` and `chunk_overlap=150` are used to keep 2-3 paragraphs coherent for academic papers.
+3. **Embed**: Send chunks to AWS Bedrock's Titan Text Embeddings V2 model (`amazon.titan-embed-text-v2:0`), resulting in 512-dimensional vectors. Vectors are L2-normalized upon creation.
+4. **Index & Save**: Create a `faiss.IndexFlatIP` (Inner Product) index. Save the index as `assets/index/index.faiss` and the metadata (chunk texts and source info) as `assets/index/index.pkl`.
+
+**Why offline ingestion?**
+Instead of dynamically parsing PDFs on AWS inside a Lambda on every upload, we perform data ingestion locally and package the resulting FAISS index as a deployment asset. This keeps the AWS architecture simple (stateless), avoids long Lambda timeouts parsing PDFs, and allows rapid iteration on chunking strategies locally.
 
 ---
 

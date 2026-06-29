@@ -4,7 +4,7 @@ echo "======================================"
 echo " Testing Titan Embeddings v2"
 echo "======================================"
 
-aws bedrock-runtime invoke-model \
+aws --profile workshop bedrock-runtime invoke-model \
   --model-id "amazon.titan-embed-text-v2:0" \
   --body fileb://scripts/input/titan_test_body.json \
   --region us-east-1 \
@@ -20,7 +20,7 @@ echo -e "\n======================================"
 echo " Testing Claude 4.5 Haiku"
 echo "======================================"
 
-aws bedrock-runtime invoke-model \
+aws --profile workshop bedrock-runtime invoke-model \
   --model-id "us.anthropic.claude-haiku-4-5-20251001-v1:0" \
   --body fileb://scripts/input/claude_test_body.json \
   --region us-east-1 \

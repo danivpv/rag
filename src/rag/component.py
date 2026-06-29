@@ -35,4 +35,4 @@ class RagComponent(Construct):
         super().__init__(scope, construct_id, **kwargs)
 
         self.compute = ComputeConstruct(self, "Compute", bucket=bucket)
-        self.api = ApiConstruct(self, "Api", handler=self.compute.fn)
+        self.api = ApiConstruct(self, "Api", handler=self.compute.fn)  # type: ignore

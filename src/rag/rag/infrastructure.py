@@ -94,8 +94,9 @@ class ComputeConstruct(Construct):
                 sid="BedrockInvokeModels",
                 actions=["bedrock:InvokeModel"],
                 resources=[
-                    f"arn:aws:bedrock:{REGION}::foundation-model/{BEDROCK_EMBED_MODEL_ID}",
+                    f"arn:aws:bedrock:*::foundation-model/{BEDROCK_EMBED_MODEL_ID}",
                     f"arn:aws:bedrock:{REGION}:{account}:inference-profile/{BEDROCK_GENERATE_MODEL_ID}",
+                    f"arn:aws:bedrock:*::foundation-model/{BEDROCK_GENERATE_MODEL_ID.replace('us.', '', 1)}",
                 ],
             )
         )

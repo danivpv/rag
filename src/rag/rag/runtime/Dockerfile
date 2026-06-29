@@ -31,10 +31,8 @@ FROM public.ecr.aws/lambda/python:3.12-x86_64
 # Lambda demands a flat layout: copy everything straight into the task root
 COPY --from=builder /build/.venv/lib/python3.12/site-packages ${LAMBDA_TASK_ROOT}/
 
-# Copy the specific runtime application code into the task root
-COPY src/rag/rag/runtime/ ${LAMBDA_TASK_ROOT}/
-
-CMD ["main.handler"]
+# Use the natively installed package from site-packages
+CMD ["rag.rag.runtime.main.handler"]
 
 
 # ==============================================================================

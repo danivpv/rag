@@ -60,11 +60,12 @@ class ApiConstruct(Construct):
             self,
             "KBAgentApi",
             description="KB Agent RAG API",
+            cloud_watch_role=True,
             deploy_options=apigw.StageOptions(
                 stage_name="prod",
                 throttling_rate_limit=THROTTLE_RATE_LIMIT,
                 throttling_burst_limit=THROTTLE_BURST_LIMIT,
-                access_log_destination=apigw.LogGroupLogDestination(access_log_group),
+                access_log_destination=apigw.LogGroupLogDestination(access_log_group),  # type: ignore
                 access_log_format=apigw.AccessLogFormat.json_with_standard_fields(
                     caller=False,
                     http_method=True,

@@ -1,0 +1,42 @@
+{
+  "answer": "# Retrieval-Augmented Generation (RAG)\n\n## What it is:\nRetrieval-Augmented Generation (RAG) enhances Large Language Models (LLMs) by retrieving relevant document chunks from external knowledge bases through semantic similarity calculation [Source: Chunk 71].\n\n## Why it is useful:\n\n1. **Reduces hallucinations**: By referencing external knowledge, RAG effectively reduces the problem of generating factually incorrect content [Source: Chunk 71].\n\n2. **Addresses LLM limitations**: RAG helps overcome challenges that LLMs face, especially in domain-specific or knowledge-intensive tasks, and handles queries beyond their training data or requiring current information [Source: Chunk 71].\n\n3. **Improves accuracy and credibility**: RAG enhances the accuracy and credibility of LLM outputs by incorporating knowledge from external databases [Source: Chunk 68].\n\n4. **Real-world applications**: Its integration into LLMs has resulted in widespread adoption, establishing RAG as a key technology in advancing chatbots and enhancing the suitability of LLMs for real-world applications [Source: Chunk 71].",
+  "confidence": 0.708,
+  "sources": [
+    {
+      "document_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities.pdf",
+      "chunk_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities#71",
+      "score": 0.6838,
+      "excerpt": "able success, though they still face significant limitations,\nespecially in domain-specific or knowledge-intensive tasks [1],\nnotably producing \u201challucinations\u201d [2] when handling queries\nbeyond their training data or requiring current information. To\novercome challenges, Retrieval-Augmented Generati..."
+    },
+    {
+      "document_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities.pdf",
+      "chunk_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities#68",
+      "score": 0.6563,
+      "excerpt": "1\nRetrieval-Augmented Generation for Large\nLanguage Models: A Survey\nYunfan Gaoa, Yun Xiong b, Xinyu Gao b, Kangxiang Jia b, Jinliu Pan b, Yuxi Bi c, Yi Dai a, Jiawei Sun a, Meng\nWangc, and Haofen Wang a,c\naShanghai Research Institute for Intelligent Autonomous Systems, Tongji University\nbShanghai K..."
+    },
+    {
+      "document_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities.pdf",
+      "chunk_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities#209",
+      "score": 0.6465,
+      "excerpt": "tionale memory for retrieval augmented generation,\u201d arXiv preprint\narXiv:2311.04177, 2023.\n[74] H. Wang, W. Huang, Y . Deng, R. Wang, Z. Wang, Y . Wang, F. Mi,\nJ. Z. Pan, and K.-F. Wong, \u201cUnims-rag: A unified multi-source\nretrieval-augmented generation for personalized dialogue systems,\u201d\narXiv prepr..."
+    },
+    {
+      "document_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities.pdf",
+      "chunk_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities#196",
+      "score": 0.6323,
+      "excerpt": "multi-hop evidence retrieval,\u201d arXiv preprint arXiv:2311.02616 , 2023.\n[32] Q. Gou, Z. Xia, B. Yu, H. Yu, F. Huang, Y . Li, and N. Cam-Tu,\n\u201cDiversify question generation with retrieval-augmented style transfer,\u201d\narXiv preprint arXiv:2310.14503 , 2023.\n[33] Z. Guo, S. Cheng, Y . Wang, P. Li, and Y . ..."
+    },
+    {
+      "document_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities.pdf",
+      "chunk_id": "scripts\\input\\retrieval-augmented-generation-llm-2024-tongji-fundan-universities#70",
+      "score": 0.6156,
+      "excerpt": "frameworks, which includes the retrieval, the generation and the\naugmentation techniques. The paper highlights the state-of-the-\nart technologies embedded in each of these critical components,\nproviding a profound understanding of the advancements in RAG\nsystems. Furthermore, this paper introduces u..."
+    }
+  ],
+  "metadata": {
+    "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "retrieval_strategy": "faiss_hybrid_512d",
+    "request_id": "4f35a168-c48f-4164-9d04-24b9025ef26e",
+    "latency_ms": 2931
+  }
+}
