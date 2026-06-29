@@ -1,7 +1,7 @@
 # Architecture Comparison & Decision Matrix
 
-> [!NOTE]
-> This document evaluates architecture alternatives for the AWS KB Agent submission, considering the $20 budget, 8-12 hour timeframe, evaluation rubric, and AWS Well-Architected Framework pillars.
+!!! note "Context"
+    This document evaluates architecture alternatives for the AWS KB Agent submission, considering the $20 budget, 8-12 hour timeframe, evaluation rubric, and AWS Well-Architected Framework pillars.
 
 ## 1. Architecture Options Overview
 
@@ -53,55 +53,7 @@ graph TD
     end
 ```
 
-## 2. Detailed Evaluation Matrix
-
-### 2.1 Implementation Speed & Risk
-
-| Criteria | A: Lambda+APIGW | B: ECS Fargate | C: Bedrock KB | D: AgentCore |
-|----------|:---:|:---:|:---:|:---:|
-| **Impl. hours (est.)** | 6-8h | 8-10h | 4-6h | 8-12h |
-| **CDK complexity** | Medium | High | Low-Medium | High (new service) |
-| **Number of subsystems** | 4 | 6 | 3 | 5 |
-| **Cold start risk** | ⚠️ FAISS load ~5s | ✅ Always warm | ✅ Managed | ✅ Managed |
-| **Deployment risk** | Low | Medium (Docker) | Low | High (new, less docs) |
-| **Budget risk** | ✅ ~$1-3 | ⚠️ ~$5-15 | ⚠️ $5-10 (AOSS implied) | ❓ Unknown pricing |
-| **CDK Python support** | ✅ Mature | ✅ Mature | ✅ Mature | ⚠️ Limited/New |
-
-### 2.2 AWS Well-Architected Framework (5 Pillars)
-
-| Pillar | A: Lambda+APIGW | B: ECS Fargate | C: Bedrock KB | D: AgentCore |
-|--------|:---:|:---:|:---:|:---:|
-| **Operational Excellence** | Good (serverless, low ops) | Good (container logs, health checks) | Best (fully managed) | Good (built-in observability) |
-| **Security** | Good (IAM, API keys, no VPC needed) | Good (VPC, security groups, task roles) | Good (IAM, Bedrock policies) | Good (Cedar policies) |
-| **Reliability** | Good (auto-retry, multi-AZ) | Good (task health checks, auto-restart) | Best (managed HA) | Good (microVM isolation) |
-| **Performance** | ⚠️ Cold start concern with FAISS | ✅ Persistent, fast responses | ✅ Optimized retrieval | ✅ Fast cold start claimed |
-| **Cost Optimization** | ✅ Best (pay per request) | ⚠️ Fargate minimum ~$0.5/hr | ⚠️ Bedrock KB may use AOSS | ❓ New pricing model |
-
-### 2.3 Feature Implementation Difficulty
-
-| Feature | A: Lambda | B: Fargate | C: Bedrock KB | D: AgentCore |
-|---------|-----------|-----------|---------------|-------------|
-| Document upload | S3 presigned URL | S3 upload route | S3 source sync | S3 + Gateway |
-| Document parsing | In Lambda (size limit!) | In container | Managed by KB | Custom |
-| Chunking | Custom (LangChain) | Custom (LangChain) | **Managed** ✅ | Custom |
-| Embedding generation | Bedrock Titan v2 API | Bedrock Titan v2 API | **Managed** ✅ | Bedrock API |
-| Vector search | FAISS in-memory | FAISS in-memory | **Managed** ✅ | Memory service |
-| Answer generation | Bedrock invoke | Bedrock invoke | Bedrock invoke | Bedrock invoke |
-| Source citations | Custom metadata | Custom metadata | **Managed** ✅ | Custom |
-| Confidence scoring | Custom heuristic | Custom heuristic | Limited (scores returned) | Custom |
-| **Streaming responses** | ❌ REST APIGW buffers; needs Function URL | ✅ HTTP/1.1 chunked + HTTP/2 native | ⚠️ Via invoke stream | ✅ Built-in |
-| Session memory | DynamoDB | In-memory/DynamoDB | ❌ Not built-in | ✅ Memory service |
-
-### 2.4 What's Out-of-Box, Easy, Needs Effort, or Requires Migration
-
-| Capability | Out-of-box | Easy | Effort | Migration needed |
-|-----------|:---:|:---:|:---:|:---:|
-| **Option A: Lambda+APIGW** | API auth, CloudWatch, S3 | Health endpoint, structured logs | FAISS cold start optimization, confidence scoring | Streaming (need Function URL or WebSocket APIGW) |
-| **Option B: ECS Fargate** | Health checks, persistent state, streaming | Docker build, logging | ALB + APIGW integration, task scaling | Multi-region (need ALB cross-region) |
-| **Option C: Bedrock KB** | Chunking, embedding, retrieval, source citations | S3 sync, KB creation via CDK | Custom confidence scoring, custom prompts | Fine-grained retrieval control |
-| **Option D: AgentCore** | Runtime, memory, observability, gateway | Tool registration, policy engine | Learning new service patterns | CDK constructs may not exist yet |
-
-## 3. Evaluation Rubric Alignment
+## 2. Evaluation Rubric Alignment
 
 Based on the [project brief evaluation criteria](file:///c:/Users/daniv/Programacion/oversight/AWS%20Native%20Knowledge%20Base%20Agent%20Candidate%20Project%20Brief.md#L350-L368):
 
@@ -115,7 +67,7 @@ Based on the [project brief evaluation criteria](file:///c:/Users/daniv/Programa
 | **Code quality** | ✅ Minimal, readable | ⚠️ More boilerplate (Dockerfile, task def) | ✅ Minimal code | ⚠️ New patterns |
 | **Communication** | ✅ Easy to explain tradeoffs | ✅ Easy to explain | ⚠️ Less to explain (managed) | ✅ Shows AWS depth |
 
-## 4. Budget Analysis ($20 Limit)
+## 3. Budget Analysis ($20 Limit)
 
 | Service | A: Lambda | B: Fargate | C: Bedrock KB | Notes |
 |---------|----------|-----------|---------------|-------|
@@ -130,14 +82,14 @@ Based on the [project brief evaluation criteria](file:///c:/Users/daniv/Programa
 | **TOTAL ESTIMATE** | **$0.50-2** | **$1-5** | **$1-3** (no AOSS) | |
 
 
-> [!CAUTION]
-> **Bedrock Knowledge Bases typically require Amazon OpenSearch Serverless (AOSS)** as the vector store, which has a **minimum charge of ~$0.24/OCU/hr × 2 OCUs = $0.48/hr**. Running for even 24 hours = $11.52. This can BUST the budget. However, Bedrock KB now supports other vector stores — need to verify if FAISS or Pinecone integration avoids AOSS.
->
-> **Safest budget option: Option A (Lambda) or Option B (Fargate)** with self-managed FAISS.
+!!! caution "Cost Warning: AOSS vs FAISS"
+    **Bedrock Knowledge Bases typically require Amazon OpenSearch Serverless (AOSS)** as the vector store, which has a **minimum charge of ~$0.24/OCU/hr × 2 OCUs = $0.48/hr**. Running for even 24 hours = $11.52. This can BUST the budget. However, Bedrock KB now supports other vector stores — need to verify if FAISS or Pinecone integration avoids AOSS.
+    
+    **Safest budget option: Option A (Lambda) or Option B (Fargate)** with self-managed FAISS.
 
-## 5. Authentication Tradeoffs
+## 4. Authentication Tradeoffs
 
-### 5.1 Options Compared
+### 4.1 Options Compared
 
 | Question | API Gateway API Key | Lambda Authorizer | Cognito/JWT |
 |----------|:---:|:---:|:---:|
@@ -150,16 +102,16 @@ Based on the [project brief evaluation criteria](file:///c:/Users/daniv/Programa
 | **CDK complexity** | Low (3 constructs) | Medium (Lambda + layer) | High (User Pool + App Client + Authorizer) |
 | **Demo friendliness** | ✅ Simple env var | ✅ Simple env var | ⚠️ Requires sign-up flow |
 
-> [!TIP]
-> **Recommendation**: Start with **API Gateway API Key** for the demo submission. Document the clear upgrade path to Cognito for production. This maximizes rubric score on "practical security decisions" while staying within time budget.
+!!! tip "Recommendation"
+    Start with **API Gateway API Key** for the demo submission. Document the clear upgrade path to Cognito for production. This maximizes rubric score on "practical security decisions" while staying within time budget.
 
-### 5.2 Why REST API, Not HTTP API v2
+### 4.2 Why REST API, Not HTTP API v2
 
 HTTP API v2 is ~70% cheaper per request (~$1/M vs ~$3.50/M) and adds ~10ms less overhead vs ~50ms for REST API. This is because HTTP API was a complete rewrite that discards the legacy VTL transformation engine — it simply pipes raw HTTP to Lambda.
 
 **However**, HTTP API deliberately excluded static API Keys and Usage Plans. AWS considers them legacy security (static string `xyz123`) compared to rotating JWT tokens via Cognito. HTTP API expects JWT-based authorizers. For our demo we need the simplicity of an API Key, which is why REST API is the right choice. The upgrade path is: swap `api_key_required=True` for a `CognitoUserPoolsAuthorizer`, move to HTTP API v2 for cost savings.
 
-### 5.3 AWS CLI/CDK Authentication
+### 4.3 AWS CLI/CDK Authentication
 
 **Question**: *"You have console sign-in URL, username, and console password. Is this enough?"*
 
@@ -176,7 +128,7 @@ You need either:
 4. Run `aws configure` locally with those keys
 5. CDK will use the same credentials automatically
 
-## 6. Fargate Containers + Vector DB Statelessness
+## 5. Fargate Containers + Vector DB Statelessness
 
 **Question**: *"Do Fargate containers need the vector DB to be external due to statelessness?"*
 
@@ -192,18 +144,9 @@ You need either:
 - **For production**: You'd want an external vector DB (Pinecone, pgvector, etc.) to avoid cold-start latency and enable horizontal scaling
 - **For our submission**: In-memory FAISS loaded from S3 is **perfectly acceptable** and explicitly recommended
 
-## 7. Build Tools & Dependency Management
 
-**Decision: `uv` Universal Lockfile & Multi-Stage Docker Builds**
 
-To satisfy the rubric's "infrastructure quality" and "production thinking" constraints, we abandoned standard `requirements.txt` generation in favor of a native `uv.lock` workflow inside the Lambda Docker container.
-
-- **Universal Resolution Engine**: `uv` utilizes a parallelized, Rust-backed, memory-safe forking resolver to solve complex cross-platform dependencies simultaneously into a unified `uv.lock`. This guarantees deterministic installations across architectures.
-- **Ephemeral Multi-Stage Builds**: We isolate massive build toolchains and volatile source caches inside a disposable intermediate compilation phase (`AS builder`), ensuring the final Lambda runtime footprint remains completely minimal.
-- **BuildKit Cache Overlays & Bind Mounts**: Using `--mount=type=cache` layers maps the global package download buffers across detached image invocations, instantly slashing re-build latency down to milliseconds. Using `--mount=type=bind` cleanly ingests configuration states (`pyproject.toml`, `uv.lock`) straight from the host context without burning temporary file layers into the intermediate structure.
-- **Bytecode Compilation**: By eagerly compiling `.pyc` files (`ENV UV_COMPILE_BYTECODE=1`), we optimize the Lambda initialization process, reducing cold start latency.
-
-## 8. Streaming Paths (Response Streaming)
+## 6. Streaming Paths (Response Streaming)
 
 Lambda + REST API Gateway **cannot stream**. API Gateway waits for Lambda to finish, buffers the complete response, then sends it. Options if streaming is needed:
 
@@ -218,7 +161,7 @@ Lambda + REST API Gateway **cannot stream**. API Gateway waits for Lambda to fin
 
 **HTTP/1.1 vs HTTP/2**: HTTP/1.1 handles one request/response per connection at a time and can stream via chunked transfer encoding. HTTP/2 multiplexes multiple streams over one connection and was built for streaming-first. Fargate + ALB supports both natively. Lambda REST API uses HTTP/1.1 but API Gateway buffers the body, so chunked encoding never reaches the client.
 
-## 9. Embedding Service Choice
+## 7. Embedding Service Choice
 
 **Decision: Amazon Bedrock Titan Embeddings v2** (confirmed, locked in):
 
@@ -242,7 +185,56 @@ response = bedrock.invoke_model(modelId="amazon.titan-embed-text-v2:0", body=bod
 embedding = json.loads(response["body"].read())["embedding"]
 ```
 
-## 10. Final Recommendation
+## 8. Detailed Evaluation Matrix
+
+### 8.1 Implementation Speed & Risk
+
+| Criteria | A: Lambda+APIGW | B: ECS Fargate | C: Bedrock KB | D: AgentCore |
+|----------|:---:|:---:|:---:|:---:|
+| **Impl. hours (est.)** | 6-8h | 8-10h | 4-6h | 8-12h |
+| **CDK complexity** | Medium | High | Low-Medium | High (new service) |
+| **Number of subsystems** | 4 | 6 | 3 | 5 |
+| **Cold start risk** | ⚠️ FAISS load ~5s | ✅ Always warm | ✅ Managed | ✅ Managed |
+| **Deployment risk** | Low | Medium (Docker) | Low | High (new, less docs) |
+| **Budget risk** | ✅ ~$1-3 | ⚠️ ~$5-15 | ⚠️ $5-10 (AOSS implied) | ❓ Unknown pricing |
+| **CDK Python support** | ✅ Mature | ✅ Mature | ✅ Mature | ⚠️ Limited/New |
+
+### 8.2 AWS Well-Architected Framework (5 Pillars)
+
+| Pillar | A: Lambda+APIGW | B: ECS Fargate | C: Bedrock KB | D: AgentCore |
+|--------|:---:|:---:|:---:|:---:|
+| **Operational Excellence** | Good (serverless, low ops) | Good (container logs, health checks) | Best (fully managed) | Good (built-in observability) |
+| **Security** | Good (IAM, API keys, no VPC needed) | Good (VPC, security groups, task roles) | Good (IAM, Bedrock policies) | Good (Cedar policies) |
+| **Reliability** | Good (auto-retry, multi-AZ) | Good (task health checks, auto-restart) | Best (managed HA) | Good (microVM isolation) |
+| **Performance** | ⚠️ Cold start concern with FAISS | ✅ Persistent, fast responses | ✅ Optimized retrieval | ✅ Fast cold start claimed |
+| **Cost Optimization** | ✅ Best (pay per request) | ⚠️ Fargate minimum ~$0.5/hr | ⚠️ Bedrock KB may use AOSS | ❓ New pricing model |
+
+### 8.3 Feature Implementation Difficulty
+
+| Feature | A: Lambda | B: Fargate | C: Bedrock KB | D: AgentCore |
+|---------|-----------|-----------|---------------|-------------|
+| Document upload | S3 presigned URL | S3 upload route | S3 source sync | S3 + Gateway |
+| Document parsing | In Lambda (size limit!) | In container | Managed by KB | Custom |
+| Chunking | Custom (LangChain) | Custom (LangChain) | **Managed** ✅ | Custom |
+| Embedding generation | Bedrock Titan v2 API | Bedrock Titan v2 API | **Managed** ✅ | Bedrock API |
+| Vector search | FAISS in-memory | FAISS in-memory | **Managed** ✅ | Memory service |
+| Answer generation | Bedrock invoke | Bedrock invoke | Bedrock invoke | Bedrock invoke |
+| Source citations | Custom metadata | Custom metadata | **Managed** ✅ | Custom |
+| Confidence scoring | Custom heuristic | Custom heuristic | Limited (scores returned) | Custom |
+| **Streaming responses** | ❌ REST APIGW buffers; needs Function URL | ✅ HTTP/1.1 chunked + HTTP/2 native | ⚠️ Via invoke stream | ✅ Built-in |
+| Session memory | DynamoDB | In-memory/DynamoDB | ❌ Not built-in | ✅ Memory service |
+
+### 8.4 What's Out-of-Box, Easy, Needs Effort, or Requires Migration
+
+| Capability | Out-of-box | Easy | Effort | Migration needed |
+|-----------|:---:|:---:|:---:|:---:|
+| **Option A: Lambda+APIGW** | API auth, CloudWatch, S3 | Health endpoint, structured logs | FAISS cold start optimization, confidence scoring | Streaming (need Function URL or WebSocket APIGW) |
+| **Option B: ECS Fargate** | Health checks, persistent state, streaming | Docker build, logging | ALB + APIGW integration, task scaling | Multi-region (need ALB cross-region) |
+| **Option C: Bedrock KB** | Chunking, embedding, retrieval, source citations | S3 sync, KB creation via CDK | Custom confidence scoring, custom prompts | Fine-grained retrieval control |
+| **Option D: AgentCore** | Runtime, memory, observability, gateway | Tool registration, policy engine | Learning new service patterns | CDK constructs may not exist yet |
+
+
+## 9. Final Recommendation
 
 ### 🏆 Option A: Lambda + API Gateway (Chosen)
 
@@ -286,7 +278,7 @@ flowchart TB
 1. **Budget**: ~$1-2 total. No ongoing costs when not in use
 2. **Speed**: 6-8 hours implementation. Clean, minimal CDK
 3. **Rubric optimization**: Maximum explanation surface area — every component is a deliberate choice you can discuss
-4. **Clear production path**: "Lambda for demo, move to Fargate when cold starts matter" is the exact production thinking they want
+4. **Clear production path**: Lambda for demo, move to Fargate when cold starts matter
 5. **CDK**: Well-documented Python constructs for all services, two-stack design (stateful storage + stateless compute/API)
 
 **When to switch to Option B (Fargate)**: If Lambda cold starts with FAISS exceed 10s, streaming is required, or package size exceeds 250MB limit.

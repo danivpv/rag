@@ -17,7 +17,7 @@ lambda-requirements = [
     "boto3>=1.43.36",
     "mangum>=0.21.0",
     "faiss-cpu>=1.14.3",
-    "fastapi>=0.138.1",
+    "fastapi[standard]>=0.138.1",
     "pydantic>=2.13.4",
 ]
 data-ingestion = [
@@ -37,9 +37,10 @@ dev = [
     "python-dotenv>=1.2.2",
     "ty>=0.0.55",
 ]
+docs = ["mkdocs-material>=9.7.6"]
 
 [tool.uv]
-default-groups = ["dev", "lambda-requirements", "data-ingestion"]
+default-groups = ["dev", "lambda-requirements", "data-ingestion", "docs"]
 
 [project.scripts]
 hello = "rag:hello"

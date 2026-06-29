@@ -1,7 +1,7 @@
 # Project Management: Scope, Prioritization & Decisions
 
-> [!NOTE]
-> This document captures scope decisions, prioritization rationale, and risk management for the AWS KB Agent submission.
+!!! note "Scope & Prioritization"
+    This document captures scope decisions, prioritization rationale, and risk management for the AWS KB Agent submission.
 
 ## 1. Scope Decisions
 
@@ -63,8 +63,8 @@ pie title "Rubric Weight Estimation (What They Care About)"
 | **Answer validation** (re-check answer against sources) | 1.5 hr | Low | 4th |
 | **Conversation memory** (DynamoDB session store) | 2 hr | Low | 5th |
 
-> [!TIP]
-> **My recommendation**: Implement the fallback response and confidence thresholding (~45 min total). These are low-hanging fruits that demonstrate "uncertainty handling" — a specific rubric item. Skip the rest unless you finish early.
+!!! tip "Recommendation"
+    **My recommendation**: Implement the fallback response and confidence thresholding (~45 min total). These are low-hanging fruits that demonstrate "uncertainty handling" — a specific rubric item. Skip the rest unless you finish early.
 
 ## 2. Feature Prioritization Matrix
 
@@ -76,14 +76,14 @@ pie title "Rubric Weight Estimation (What They Care About)"
 | **Must Have** | API Gateway + API Key auth | ✅ |
 | **Must Have** | CloudWatch access logs (APIGW) + execution logs (Lambda) | ✅ |
 | **Must Have** | Lambda /health + /query endpoints | ✅ |
-| **Must Have** | Pre-seeded FAISS from sample docs | ⬜ |
-| **Must Have** | Streamlit client calling AWS API | ⬜ |
+| **Must Have** | Pre-seeded FAISS from sample docs | ✅ |
+| **Must Have** | Streamlit client calling AWS API | ✅ |
 | **Must Have** | Structured JSON response (answer, sources, confidence, metadata) | ✅ |
-| **Must Have** | README with architecture diagram, tradeoffs, demo evidence | ⬜ |
+| **Must Have** | README with architecture diagram, tradeoffs, demo evidence | ✅ |
 | **Should Have** | Structured CloudWatch logging with request IDs | ✅ |
-| **Should Have** | Error handling (401, 400, 500 with structured errors) | ⬜ |
-| **Should Have** | `cdk destroy` cleanup instructions | ⬜ |
-| **Should Have** | test_api.py validation script | ⬜ |
+| **Should Have** | Error handling (401, 400, 500 with structured errors) | ✅ |
+| **Should Have** | `cdk destroy` cleanup instructions | ✅ |
+| **Should Have** | test_api.py validation script | ✅ |
 | **Could Have** | Confidence threshold fallback | ⬜ |
 | **Could Have** | Request latency tracking in response | ⬜ |
 | **Could Have** | Query rewriting | ⬜ |

@@ -1,7 +1,7 @@
 # Blockers Resolution Guide (Do Today — Thursday)
 
-> [!CAUTION]
-> These are **blocking prerequisites** for Friday implementation. Each one takes 5-30 minutes. Resolve all today before stopping.
+!!! caution "Blocking Prerequisites"
+    These are **blocking prerequisites** for Friday implementation. Each one takes 5-30 minutes. Resolve all today before stopping.
 
 ## Blocker 1: AWS Credentials for CLI/CDK (UNBLOCKED!)
 
@@ -49,8 +49,8 @@ cdk synth
 # Check what policies Mostafa gave you
 aws iam list-attached-user-policies --user-name candidates-10 --profile oversight
 ```
-> [!TIP]
-> If you see `AdministratorAccess`, `PowerUserAccess`, or a custom policy with the required wildcard permissions, you are fully unblocked to deploy the CDK stack!
+!!! tip "IAM Verification"
+    If you see `AdministratorAccess`, `PowerUserAccess`, or a custom policy with the required wildcard permissions, you are fully unblocked to deploy the CDK stack!
 
 ---
 
@@ -58,9 +58,8 @@ aws iam list-attached-user-policies --user-name candidates-10 --profile oversigh
 
 Bedrock models must be **explicitly enabled** in the AWS Console before you can invoke them. This is a one-time console action.
 
-> [!WARNING]
-> **Why this can't be automated via CDK/CLI:**
-> Enabling foundation models in Bedrock requires accepting the End User License Agreements (EULAs) from providers like Anthropic. AWS intentionally does not expose an API or CDK construct to automatically "click agree" on these legal agreements. It must be done manually by a human in the console for every new AWS account.
+!!! warning "Why this can't be automated via CDK/CLI:"
+    Enabling foundation models in Bedrock requires accepting the End User License Agreements (EULAs) from providers like Anthropic. AWS intentionally does not expose an API or CDK construct to automatically "click agree" on these legal agreements. It must be done manually by a human in the console for every new AWS account.
 
 ### Models to Enable
 
@@ -121,8 +120,8 @@ aws cloudformation describe-stacks --stack-name CDKToolkit --query "Stacks[0].St
 # Expected: "CREATE_COMPLETE" or "UPDATE_COMPLETE"
 ```
 
-> [!NOTE]
-> CDK bootstrap needs `cloudformation:CreateStack`, `s3:CreateBucket`, and `iam:CreateRole`. If it fails, contact admin.
+!!! note "CDK Permissions"
+    CDK bootstrap needs `cloudformation:CreateStack`, `s3:CreateBucket`, and `iam:CreateRole`. If it fails, contact admin.
 
 ---
 
@@ -171,8 +170,8 @@ handler = lambda_.DockerImageFunction(
 )
 ```
 
-> [!TIP]
-> **Decide upfront which option.** Docker Lambda is safer (no size limit) but requires Docker running. Lambda Layer requires building on Linux (use WSL or a lightweight Docker build step). **My recommendation: go straight to Docker Lambda** — it's more production-realistic, eliminates the size gamble, and reviewers will appreciate the ECR/container story.
+!!! tip "Architectural Recommendation"
+    **Decide upfront which option.** Docker Lambda is safer (no size limit) but requires Docker running. Lambda Layer requires building on Linux (use WSL or a lightweight Docker build step). **My recommendation: go straight to Docker Lambda** — it's more production-realistic, eliminates the size gamble, and reviewers will appreciate the ECR/container story.
 
 ---
 
@@ -192,77 +191,9 @@ git init
 # Use --package mode (src/ layout + [project.scripts] + build-system)
 uv init --package aws-kb-agent
 
-# This creates:
-# src/aws_kb_agent/__init__.py
-# pyproject.toml  (with [build-system] hatchling)
-# README.md
-# uv.lock  (empty for now)
-
-# Verify the entry point pattern works
-# Add to pyproject.toml under [project.scripts]:
-# kb-agent = "aws_kb_agent:main"
-# Add main() to src/aws_kb_agent/__init__.py
-uv run kb-agent  # Should print hello
+# Use --language python for cdk python scaffolding
+uv run cdk init --language python  # Should print hello
 ```
-
-**Add project dependencies today** (before you need them):
-```bash
-# CDK
-uv add "aws-cdk-lib>=2.150.0" constructs
-
-# Lambda + AWS
-uv add boto3 mangum fastapi
-
-# RAG
-uv add faiss-cpu langchain langchain-community pypdf python-docx
-
-# Config
-uv add pydantic-settings python-dotenv
-
-# Dev tools
-uv add --dev pytest pytest-asyncio ruff
-```
-
-**Create directory structure** (manually or with a script):
-```bash
-mkdir -p src/aws_kb_agent
-mkdir -p lambda_handler/{api,rag,utils}
-mkdir -p infra
-mkdir -p sample-docs
-mkdir -p scripts
-mkdir -p client
-
-# Touch __init__ files
-touch lambda_handler/__init__.py
-touch lambda_handler/api/__init__.py
-touch lambda_handler/rag/__init__.py
-touch lambda_handler/utils/__init__.py
-touch infra/__init__.py
-```
-
-**Add CDK entry points**:
-```toml
-# In pyproject.toml, add:
-[project.scripts]
-kb-agent = "aws_kb_agent:main"
-cdk-app = "aws_kb_agent.infra.app:main"   # CDK app entrypoint
-```
-
-> [!NOTE]
-> `uv run cdk synth` won't work out of the box because CDK CLI is a Node.js tool. You still run `cdk synth` directly (after `npm install -g aws-cdk`). For the app itself use `uv run python app.py` or configure `cdk.json` to point to your venv Python.
-
-**Configure `cdk.json`**:
-```json
-{
-  "app": "uv run python app.py",
-  "watch": {
-    "include": ["**"],
-    "exclude": ["README.md", "cdk*.json", ".git/**", ".venv/**"]
-  }
-}
-```
-
-This makes `cdk synth` automatically use `uv run python app.py` — no venv activation needed.
 
 ---
 
@@ -300,20 +231,6 @@ def load_or_update_index():
 
 **One caveat**: S3 ETags for multipart uploads are hashes of hashes, not the file hash. For small FAISS indexes (<100MB) there are no multipart uploads so the ETag == MD5. Fine for our case.
 
-### Rubric Alignment
-
-| Rubric Item | Impact | Assessment |
-|-------------|:------:|-----------|
-| Architecture judgment | High | Shows you understand Lambda execution model + S3 optimizations |
-| Production thinking | High | Explicitly addresses cold start vs warm start behavior |
-| API design | Neutral | This is internal Lambda logic |
-| Code quality | High | Clean pattern, well-commented |
-| Explainability | High | Easy to explain in a README or interview |
-
-**Verdict: YES, implement it.** Not for document upload (that's out of scope), but for the **read path**. The ETag check costs microseconds and demonstrates production-level thinking about Lambda execution models.
-
-**Where to use it**: In the Lambda `/query` handler's startup logic.
-
 ### Where NOT to Use It (Yet)
 
 The "Write Lambda" (re-seeding the index on document upload) **is out of scope** for the submission but perfectly documented as a future extension:
@@ -331,33 +248,3 @@ This is exactly the kind of production design thinking the rubric rewards, even 
 
 ---
 
-## Today's Checklist Summary
-
-```
-CREDENTIALS
-[ ] aws sts get-caller-identity → returns account ID
-[ ] aws bedrock list-foundation-models → returns model list
-[ ] Note your AWS account ID for CDK bootstrap
-
-BEDROCK
-[ ] Enable Amazon Titan Text Embeddings V2 in Bedrock console
-[ ] Enable Anthropic Claude 3 Haiku in Bedrock console
-[ ] Validate both with CLI test commands above
-
-CDK
-[ ] npm install -g aws-cdk
-[ ] cdk bootstrap aws://ACCOUNT_ID/us-east-1
-
-PACKAGE SIZE
-[ ] Check faiss-cpu + deps size
-[ ] Decision: Lambda Layer or Docker Lambda
-
-SCAFFOLDING
-[ ] mkdir aws-kb-agent && cd aws-kb-agent && git init
-[ ] uv init --package aws-kb-agent
-[ ] uv add [dependencies listed above]
-[ ] Create directory structure
-[ ] Create cdk.json with "app": "uv run python app.py"
-[ ] Verify: uv run python app.py (CDK entrypoint works)
-[ ] git add . && git commit -m "chore: initial project scaffolding"
-```

@@ -1,7 +1,7 @@
 # Metaprompting Strategy & AI Tools Usage
 
-> [!NOTE]
-> This document defines how AI coding assistants are used throughout the project, satisfying the brief's requirement: *"AI tools usage: include a short section on how you used coding assistants or LLMs while building the project."*
+!!! note "AI Usage Transparency"
+    This document defines how AI coding assistants are used throughout the project, satisfying the brief's requirement: *"AI tools usage: include a short section on how you used coding assistants or LLMs while building the project."*
 
 ## 1. AI Tools in Use
 
@@ -44,8 +44,8 @@ Use this as the foundational system prompt for **all** follow-up threads and cod
 
 Each thread gets a **focused context injection** that scopes the assistant's knowledge to what is strictly necessary. The key discipline is: **reference specific files**, not explanations of their content. The agent will read them.
 
-> [!IMPORTANT]
-> **Repo structure**: Implemented following the [AWS CDK recommended project structure](https://aws.amazon.com/es/blogs/developer/recommended-aws-cdk-project-structure-for-python-applications/). Each domain has its own folder with `infrastructure.py` (the Construct) and `runtime/` (the Lambda code). The top-level `app.py` assembles everything into two Stacks (stateful + stateless).
+!!! important "Repo Structure Constraint"
+    **Repo structure**: Implemented following the [AWS CDK recommended project structure](https://aws.amazon.com/es/blogs/developer/recommended-aws-cdk-project-structure-for-python-applications/). Each domain has its own folder with `infrastructure.py` (the Construct) and `runtime/` (the Lambda code). The top-level `app.py` assembles everything into two Stacks (stateful + stateless).
 
 ---
 

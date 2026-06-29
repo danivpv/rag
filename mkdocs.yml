@@ -1,0 +1,66 @@
+site_name: AWS Native Knowledge Base Agent
+site_description: Documentation for the AWS Native Knowledge Base Agent, detailing the architecture, implementation, and road to production.
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+    - content.code.copy
+    - content.code.annotate
+    - navigation.indexes
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - 1. Analysis:
+      - 1-analysis/index.md
+      - '* Prototype Analysis': 1-analysis/01_Prototype_Analysis.md
+      - Architecture Comparison: 1-analysis/02_Architecture_Comparison.md
+  - 2. Strategy:
+      - 2-strategy/index.md
+      - Project Management: 2-strategy/04_Project_Management.md
+      - '* Metaprompting & AI Tools': 2-strategy/05_Metaprompting_and_AI_Tools.md
+      - '* Blockers Today': 2-strategy/06_Blockers_Today.md
+  - 3. Operations:
+      - 3-operations/index.md
+      - Implementation Reference: 3-operations/03_Implementation_Reference.md
+      - '* Deployment Guide': 3-operations/07_Deployment_Guide.md
+      - Evaluation: 3-operations/08_Evaluation.md
+      - Road to Production: 3-operations/09_Road_to_Production.md
+      - RAG Implementation: 3-operations/10_RAG_Implementation.md

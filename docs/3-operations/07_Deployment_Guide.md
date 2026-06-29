@@ -18,8 +18,8 @@
 
 ## Phase 1 — Create the Member Account (Console)
 
-> [!CAUTION]
-> Creating a real AWS account linked to your organization cannot be trivially undone (account closure takes 90 days). 
+!!! caution "Account Creation"
+    Creating a real AWS account linked to your organization cannot be trivially undone (account closure takes 90 days).
 
 1. Log into your management account AWS Console.
 2. Go to **AWS Organizations**.
@@ -84,8 +84,8 @@ Expected output — `Account` must be your new `oversight-test` account (not `97
 
 Before deploying, we generate the vector embeddings locally and store them in the `assets/index/` directory.
 
-> [!IMPORTANT]
-> Your AWS account must have Bedrock model access enabled for **Titan Embeddings v2** and **Claude 4.5 Haiku**. 
+!!! important "Bedrock Models"
+    Your AWS account must have Bedrock model access enabled for **Titan Embeddings v2** and **Claude 4.5 Haiku**.
 
 Run the ingestion script:
 ```bash
@@ -178,16 +178,9 @@ TEST: 03_authenticated_query
   Confidence: 0.82   Sources: 5 chunk(s)
 ```
 
-> [!TIP]
-> The first query is slow (~8–15s) due to Lambda cold starts (downloading the FAISS index from S3 and spinning up the container). Subsequent queries will take ~2–4s.
+!!! tip "Cold Start Notice"
+    The first query can be slow (~8–15s) due to Lambda cold starts (downloading the FAISS index from S3 and spinning up the container). Subsequent queries will take ~2–4s.
 
 
 
-## Upgrade Path
 
-| Current | Production upgrade | What changes |
-|---|---|---|
-| API Key auth | Cognito JWT Authorizer | CDK only; Lambda unchanged |
-| Lambda | Fargate | Same Dockerfile; `uvicorn main:app` instead of Mangum |
-| Manual deploy | CodePipeline toolchain | Add `toolchain.py`; CDK app unchanged |
-| x86_64 | ARM64 Graviton (~20% cheaper) | Verify faiss-cpu ARM wheel; one CDK param change |

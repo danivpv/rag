@@ -230,5 +230,5 @@ cdk.out/
 *.code-workspace
 
 # FAISS index artifacts (generated locally by make seed, synced to S3 by CDK)
-assets/
+.assets/
 

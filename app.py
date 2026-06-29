@@ -58,7 +58,7 @@ storage_stack = KBAgentStorageStack(
     f"{STACK_NAME}Storage",
     env=env,
     description="KB Agent — stateful S3 storage (protected)",
-    termination_protection=True,
+    termination_protection=False,
     tags=common_tags,
 )
 

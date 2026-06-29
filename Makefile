@@ -6,7 +6,7 @@ AWS_PROFILE ?= default#oversight-test
 export AWS_PROFILE
 
 .PHONY: lint type-check test seed synth deploy deploy-stateful \
-		deploy-stateless clean lambda-requirements docker-build
+		deploy-stateless clean lambda-requirements docker-build docs
 
 # ── Quality ───────────────────────────────────────────────────────────────────
 
@@ -38,13 +38,15 @@ deploy-stateless:
 deploy: seed
 	uv run cdk deploy --all --profile $(AWS_PROFILE)
 
+teardown:
+	uv run cdk destroy --all --profile $(AWS_PROFILE)
+
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 clean:
 	rm -rf cdk.out src/rag/rag/runtime/requirements.txt
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
-
 
 # ── Dev ───────────────────────────────────────────────────────────────────────
 lambda-requirements:
@@ -69,3 +71,6 @@ test-api:
 
 streamlit:
 	uv run streamlit run client/app.py
+
+docs:
+	uv run mkdocs serve
