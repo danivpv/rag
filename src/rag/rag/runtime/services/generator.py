@@ -65,7 +65,7 @@ _USER_PROMPT_TEMPLATE = """\
 <instructions>
 - Answer only from the context above. Do not use external knowledge.
 - Be concise and direct.
-- Cite the source document for each key claim.
+- Cite the source document and chunk for each key claim exactly as formatted in the context (e.g., [Source: document_name.pdf, Chunk 7]).
 </instructions>"""
 
 _MAX_TOKENS = 1000

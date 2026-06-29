@@ -66,3 +66,6 @@ hello-app:
 
 test-api:
 	uv run python scripts/test_api.py
+
+streamlit:
+	uv run streamlit run client/app.py

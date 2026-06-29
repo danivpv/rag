@@ -330,11 +330,36 @@ Read the API contract (§7) before building: [03_Implementation_Guide.md](file:/
 ### **Deliverables**:
 - [client/app.py](file:///c:/Users/daniv/Programacion/oversight/client/app.py) — Streamlit UI showing question, answer, confidence, sources, metadata
 - `.env.example` — Template with `API_BASE_URL` and `API_TOKEN` placeholders
+
+---
+
+### Thread 5: Documentation & MkDocs Material (Systems Engineering Polish)
+
+```
+### System prompt: [GLOBAL SYSTEM PROMPT ABOVE]
+
+### Role: Staff/Principal Systems Engineer & Technical Writer
+Read the project brief rubric before building. The goal is to maximize the "Architecture judgment" and "Production-readiness thinking" scores.
+
+### Key constraints:
+- Use `mkdocs-material` to compile the `docs/` folder into a beautiful static site.
+- Configure `mkdocs.yml` at the project root.
+- The `docs/` folder should be structured logically to tell the story of the project.
+- Write `docs/08_Road_to_Production.md`. This is the crown jewel of the submission. It must cover not just technical implementation, but Platform boundaries, Team boundaries, Security, FinOps, and Operational Readiness. It needs to signal highly mature systems engineering experience.
+- Consolidate a master `README.md` at the root that serves as the entry point and satisfies all brief requirements (linking to MkDocs or explaining how to run it).
+
+### **Goal**: Elevate the project from a "coding test" to a "Principal Engineer's design review" by providing an in-depth Road to Production and a polished MkDocs presentation.
+
+### **Deliverables**:
+- `mkdocs.yml` — Material for MkDocs configuration
+- Updated `pyproject.toml` with `mkdocs-material` in a docs dependency group
+- [docs/08_Road_to_Production.md](file:///c:/Users/daniv/Programacion/oversight/docs/08_Road_to_Production.md) — The mature systems engineering perspective
+- `README.md` — The consolidated root README
 ```
 
 ---
 
-### Thread 5: Debug
+### Thread 6: Debug
 
 ```
 ### System prompt: [GLOBAL SYSTEM PROMPT ABOVE]
